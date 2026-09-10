@@ -18,6 +18,7 @@ C1 (spec, tickets, context) et C2 (instruction + enforcement) se font donc sur *
 |---|---|
 | [`docs/`](docs/) | Sujets du cours (lectures, labs, grille) |
 | [`SyncMates/`](SyncMates/) | Copie du projet (C1 / C2) |
+| [`SyncMates/docs/agents/`](SyncMates/docs/agents/) | Spec, ADR et tickets C1 (pour l’agent, pas de la doc produit) |
 | [`Lab_1/lab1-interview-ambiguities.md`](Lab_1/lab1-interview-ambiguities.md) | Questions non anticipées du grill (oral C1) |
 
 **C3** (bug *sales pipeline*) est un **autre** dépôt, fourni par l’école, pas celui-ci.
