@@ -12,6 +12,7 @@ declare(strict_types=1);
  * - renvoie 404 JSON pour toute route inconnue.
  */
 require_once __DIR__ . '/../../src/routes/syncers.php';
+require_once __DIR__ . '/../../src/routes/accounts.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -36,6 +37,9 @@ $participantUnavailabilitiesMatches = [];
 $isParticipantUnavailabilitiesRoute = preg_match('#^/api/syncers/([^/]+)/participants/([^/]+)/unavailabilities$#', $normalizedPath, $participantUnavailabilitiesMatches) === 1;
 $resultsMatches = [];
 $isResultsRoute = preg_match('#^/api/syncers/([^/]+)/results$#', $normalizedPath, $resultsMatches) === 1;
+$isRegisterAccountRoute = $normalizedPath === '/api/accounts';
+$isLoginAccountRoute = $normalizedPath === '/api/accounts/login';
+$isGetCurrentAccountRoute = $normalizedPath === '/api/accounts/me';
 
 // Route: création d'un Syncer.
 if ($isCreateSyncerRoute && $method === 'POST') {
@@ -111,6 +115,24 @@ if ($isParticipantUnavailabilitiesRoute && $method === 'PATCH') {
     $syncerId = isset($participantUnavailabilitiesMatches[1]) ? (string) $participantUnavailabilitiesMatches[1] : '';
     $participantId = isset($participantUnavailabilitiesMatches[2]) ? (string) $participantUnavailabilitiesMatches[2] : '';
     handleUpdateParticipantUnavailabilities($syncerId, $participantId);
+    exit;
+}
+
+// Route: inscription d'un Account.
+if ($isRegisterAccountRoute && $method === 'POST') {
+    handleRegisterAccount();
+    exit;
+}
+
+// Route: connexion à un Account.
+if ($isLoginAccountRoute && $method === 'POST') {
+    handleLoginAccount();
+    exit;
+}
+
+// Route: Account courant (authentifié via Account Session).
+if ($isGetCurrentAccountRoute && $method === 'GET') {
+    handleGetCurrentAccount();
     exit;
 }
 

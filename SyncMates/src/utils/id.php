@@ -41,3 +41,19 @@ function generateHostSessionId(): string
     return 'hs_' . bin2hex(random_bytes(24));
 }
 
+/**
+ * Génère un identifiant unique d'Account.
+ */
+function generateAccountId(): string
+{
+    return 'acct_' . bin2hex(random_bytes(8));
+}
+
+/**
+ * Génère un identifiant de session Account.
+ */
+function generateAccountSessionId(): string
+{
+    return 'as_' . bin2hex(random_bytes(24));
+}
+

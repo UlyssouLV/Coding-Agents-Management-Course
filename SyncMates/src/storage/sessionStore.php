@@ -145,3 +145,117 @@ function createHostSessionForSyncer(string $syncerId, int $ttlInSeconds): array
     saveHostSession($session);
     return $session;
 }
+
+/**
+ * Enregistre une session Account.
+ *
+ * Réutilise le même dossier/pattern de fichier que les sessions host
+ * (data/sessions/{sessionId}.json), distinguée par le champ `role`.
+ *
+ * @param array $session Session à enregistrer.
+ */
+function saveAccountSession(array $session): void
+{
+    ensureSessionsDataDirectoryExists();
+
+    $sessionId = isset($session['sessionId']) ? (string) $session['sessionId'] : '';
+    if ($sessionId === '') {
+        throw new RuntimeException('Identifiant de session invalide.');
+    }
+
+    $json = json_encode($session, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        throw new RuntimeException('Impossible de sérialiser la session.');
+    }
+
+    $bytes = file_put_contents(sessionFilePath($sessionId), $json, LOCK_EX);
+    if ($bytes === false) {
+        throw new RuntimeException('Impossible d\'enregistrer la session.');
+    }
+}
+
+/**
+ * Supprime une session Account.
+ *
+ * @param string $sessionId Identifiant de session.
+ */
+function deleteAccountSession(string $sessionId): void
+{
+    if ($sessionId === '') {
+        return;
+    }
+
+    $path = sessionFilePath($sessionId);
+    if (file_exists($path)) {
+        unlink($path);
+    }
+}
+
+/**
+ * Charge une session Account et invalide automatiquement les expirées.
+ *
+ * @param string $sessionId Identifiant de session.
+ *
+ * @return array|null Session valide (role === 'account'), sinon null.
+ */
+function getAccountSessionById(string $sessionId): ?array
+{
+    if ($sessionId === '') {
+        return null;
+    }
+
+    $path = sessionFilePath($sessionId);
+    if (!file_exists($path)) {
+        return null;
+    }
+
+    $raw = file_get_contents($path);
+    if (!is_string($raw) || $raw === '') {
+        return null;
+    }
+
+    $session = json_decode($raw, true);
+    if (!is_array($session)) {
+        return null;
+    }
+
+    $role = isset($session['role']) ? (string) $session['role'] : '';
+    if ($role !== 'account') {
+        return null;
+    }
+
+    $expiresAt = isset($session['expiresAt']) ? (string) $session['expiresAt'] : '';
+    if ($expiresAt === '' || strtotime($expiresAt) === false) {
+        deleteAccountSession($sessionId);
+        return null;
+    }
+
+    if (strtotime($expiresAt) < time()) {
+        deleteAccountSession($sessionId);
+        return null;
+    }
+
+    return $session;
+}
+
+/**
+ * Crée une session Account pour un Account.
+ *
+ * @param string $accountId    Identifiant de l'Account.
+ * @param int    $ttlInSeconds Durée de validité en secondes.
+ *
+ * @return array Session créée.
+ */
+function createAccountSessionForAccount(string $accountId, int $ttlInSeconds): array
+{
+    $session = [
+        'sessionId' => generateAccountSessionId(),
+        'accountId' => $accountId,
+        'role' => 'account',
+        'createdAt' => nowIso8601(),
+        'expiresAt' => expiresInSecondsIso8601($ttlInSeconds),
+    ];
+
+    saveAccountSession($session);
+    return $session;
+}
