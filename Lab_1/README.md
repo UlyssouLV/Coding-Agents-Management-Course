@@ -1,5 +1,8 @@
-# Lab 1 (C1) et Lab 2 (C2)
+# Lab 1 (C1)
 
-Copie du projet **SyncMates** (fichiers dans ce repo, plus un dépôt Git séparé ici).
+- Copie du projet : [`../SyncMates/`](../SyncMates/)
+- Questions d’interview non anticipées (oral) : [`lab1-interview-ambiguities.md`](lab1-interview-ambiguities.md)
 
-Le remote historique du projet : [https://github.com/UlyssouLV/SyncMates](https://github.com/UlyssouLV/SyncMates) — les commits C1/C2 se font désormais sur **ce** repo (Coding-Agents-Management-Course).
+Le dépôt d’origine, laissé intact : [https://github.com/UlyssouLV/SyncMates](https://github.com/UlyssouLV/SyncMates)
+
+Les commits C1/C2 se font sur **ce** repo (Coding-Agents-Management-Course).
