@@ -44,6 +44,10 @@ _Avoid_: Login session
 The session established by logging into an Account. On its own, it is sufficient to manage every Syncer that Account owns — no separate Host Session is needed for owned Syncers.
 _Avoid_: User session
 
+**Client Area**:
+The page reachable once an Account Session is established, listing every Syncer that Account owns and exposing Claim, Extension, and Reactivation for them. Each listed Syncer links out to its own Host console for participant/event-period management; the Client Area itself does not duplicate that console.
+_Avoid_: Dashboard, Account page
+
 ### Payment & lifecycle
 
 **Free Syncer**:

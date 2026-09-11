@@ -31,6 +31,60 @@ SyncMates V1 lets anyone create a Syncer anonymously: a Host sets a name and pas
 - **Automated enforcement of the Retention Period's permanent deletion**, and a formal GDPR/data-retention review of keeping Archived Syncer data (participant names, unavailability dates) for up to two years after Reactivation becomes impossible. ADR-0004 flags this as a pre-ship review item, not something this feature resolves.
 - **General V1 product scope already deferred at the README level** and unaffected by this feature: advanced design/UI, and notifications.
 
+## Addendum: Account pages, Client Area, and global CSS
+
+The API surface above (registration, login, `me`, `me/syncers`, Claim, Extension, Reactivation) shipped
+with no corresponding HTML. This addendum covers building that UI, closing the one backend gap found while
+reviewing it, and giving the whole product a consistent stylesheet.
+
+### What is being built
+
+- **Account pages**: a login page for an Account, linked from the home page via a new "Espace client"
+  section (symmetrical to the existing "Espace host" section). A "S'inscrire" control on the login page
+  leads to a separate registration page.
+- **Client Area**: a page reachable once an Account Session is established. It lists every Syncer the
+  Account owns (name, status, expiry), and for each one exposes: a link to that Syncer's own Host console
+  (`syncer.html`) for participant/event-period management, and direct Extension/Reactivation actions. It
+  also carries a Claim form (Syncer identifier + Host password) and an Account logout control. See
+  [CONTEXT.md](../../../CONTEXT.md) — **Client Area**.
+- **Account logout**: `POST /api/accounts/logout`, the one Account endpoint this review found missing —
+  `deleteAccountSession` already exists in `src/storage/sessionStore.php` but no route calls it. Every
+  other endpoint the pages above need (register, login, `me`, `me/syncers`, claim, extend, reactivate)
+  already exists and needs no change.
+- **Global CSS**: a shared design system (one base stylesheet plus one stylesheet per page) applied
+  consistently across every existing page (`index`, `host`, `syncer`, `participant`, `result`) and the new
+  Account/Client Area pages, superseding the "HTML simple, CSS minimal" posture from the README's V1
+  vision.
+
+### Decisions taken
+
+- **The Client Area links out to each Syncer's existing Host console rather than embedding its
+  management UI.** `syncer.html` already handles participants and event-period, and Ticket 003 already
+  made it accept an owning Account Session in place of a Host Session — duplicating that UI inside the
+  Client Area would be redundant.
+- **Extension and Reactivation are triggered directly from the Client Area's Syncer list**, not from
+  inside the Host console — status and expiry across every owned Syncer is exactly the cross-Syncer
+  information the Client Area exists to centralize; the Host console stays scoped to a single Syncer.
+- **Account logout is a separate unit of work from the Client Area page** — the Client Area only needs a
+  button wired to it, and the endpoint itself has no dependency on the rest of this addendum.
+- **The existing checkbox-based unavailability picker (`#unavailability-picker` in `participant.html`)
+  keeps its current interaction model.** It is restyled by the new global CSS, not replaced by a
+  calendar-widget library — no new frontend dependency is introduced by this addendum.
+- **Account login and registration are separate pages**, not a single page combining both forms — unlike
+  `host.html`, which combines Syncer login and Syncer creation on one page.
+
+### Explicitly out of scope
+
+- **Password reset.** Not mentioned anywhere in the spec; Ticket 001 already ruled it out as speculative,
+  and that stands.
+- **Account deletion.** Never specified for Accounts; introducing it now would be speculative in the same
+  way Ticket 001 flagged for password reset.
+- **Email change**, and any other Account self-service beyond register/login/logout.
+- **A calendar-picker library (e.g. FullCalendar)** for date selection anywhere in the product. Only
+  visual styling changes; interaction models stay as they are.
+- **Embedding Syncer management (participants, event period) inside the Client Area.** It links out to the
+  existing Host console instead.
+
 ---
 
 This document is a point-in-time spec, not living documentation. Once this feature is implemented, do not keep editing this file to track drift — if the accounts/paid-syncers design changes afterward, mark this file superseded (e.g. `# Superseded by <new-spec>`) and write a new spec instead. Do not delete it.
