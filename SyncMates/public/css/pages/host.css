@@ -1,0 +1,5 @@
+/* SyncMates - host authentication page overrides */
+
+body.page-host #copy-share-link-button {
+  margin-bottom: var(--space-2);
+}

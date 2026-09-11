@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Connexion Account</title>
+  </head>
+  <body>
+    <main>
+      <h1>Connexion Account</h1>
+      <p>
+        Connecte-toi à ton Account pour retrouver tes Syncers dans l'espace
+        client.
+      </p>
+
+      <form id="account-login-form" method="post" action="#">
+        <div>
+          <label for="account-email">Email</label>
+          <input
+            id="account-email"
+            name="accountEmail"
+            type="email"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div>
+          <label for="account-password">Mot de passe</label>
+          <input
+            id="account-password"
+            name="accountPassword"
+            type="password"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit">Se connecter</button>
+      </form>
+      <p id="account-login-feedback" aria-live="polite"></p>
+
+      <p>
+        Pas encore de compte ?
+        <a href="account-register.html" id="account-register-link">S'inscrire</a>
+      </p>
+
+      <p>
+        <a href="index.html">Retour à l'accueil</a>
+      </p>
+    </main>
+    <script src="js/maintenance.js" defer></script>
+    <script src="js/account-login.js" defer></script>
+  </body>
+</html>

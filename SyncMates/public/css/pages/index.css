@@ -1,0 +1,9 @@
+/* SyncMates - home page overrides */
+
+body.page-index main {
+  text-align: center;
+}
+
+body.page-index section {
+  text-align: left;
+}

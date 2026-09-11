@@ -174,6 +174,27 @@ function handleListOwnedSyncers(): void
 }
 
 /**
+ * Traite POST /api/accounts/logout.
+ *
+ * Met fin à l'Account Session courante: supprime le fichier de session via
+ * deleteAccountSession et efface le cookie via clearAccountSessionCookie.
+ * Idempotent: absence ou invalidité de session ne provoque pas d'erreur.
+ */
+function handleLogoutAccount(): void
+{
+    $sessionId = isset($_COOKIE[ACCOUNT_SESSION_COOKIE_NAME]) ? (string) $_COOKIE[ACCOUNT_SESSION_COOKIE_NAME] : '';
+    if ($sessionId !== '') {
+        deleteAccountSession($sessionId);
+    }
+
+    clearAccountSessionCookie();
+
+    jsonResponse(200, [
+        'message' => 'Déconnexion réussie.',
+    ]);
+}
+
+/**
  * Vérifie qu'une Account Session valide accompagne la requête.
  *
  * @return string|null Identifiant de l'Account authentifié, ou null si la

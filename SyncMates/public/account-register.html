@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Inscription Account</title>
+  </head>
+  <body>
+    <main>
+      <h1>Créer un Account</h1>
+      <p>
+        Crée un Account pour retrouver et gérer tes Syncers depuis l'espace
+        client.
+      </p>
+
+      <form id="account-register-form" method="post" action="#">
+        <div>
+          <label for="new-account-email">Email</label>
+          <input
+            id="new-account-email"
+            name="newAccountEmail"
+            type="email"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div>
+          <label for="new-account-password">Mot de passe</label>
+          <input
+            id="new-account-password"
+            name="newAccountPassword"
+            type="password"
+            required
+            autocomplete="new-password"
+          />
+        </div>
+
+        <button type="submit">S'inscrire</button>
+      </form>
+      <p id="account-register-feedback" aria-live="polite"></p>
+
+      <p>
+        Déjà un compte ?
+        <a href="account-login.html">Se connecter</a>
+      </p>
+
+      <p>
+        <a href="index.html">Retour à l'accueil</a>
+      </p>
+    </main>
+    <script src="js/maintenance.js" defer></script>
+    <script src="js/account-register.js" defer></script>
+  </body>
+</html>

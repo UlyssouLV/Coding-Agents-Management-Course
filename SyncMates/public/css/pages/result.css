@@ -1,0 +1,13 @@
+/* SyncMates - results page overrides */
+
+body.page-result #best-dates-list {
+  list-style: decimal;
+  padding-left: var(--space-5);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+body.page-result #participants-summary-list {
+  list-style: none;
+  padding-left: 0;
+}

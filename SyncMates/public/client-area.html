@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncMates - Espace client</title>
+  </head>
+  <body>
+    <main>
+      <h1>Espace client</h1>
+      <p>
+        Retrouve ici tous les Syncers possédés par ton Account, réclame un
+        Syncer existant, et gère leur Extension ou Réactivation.
+      </p>
+
+      <section>
+        <h2>Mes Syncers</h2>
+        <ul id="owned-syncers-list">
+          <li>Chargement...</li>
+        </ul>
+        <p id="owned-syncers-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Réclamer un Syncer existant</h2>
+        <form id="claim-syncer-form" method="post" action="#">
+          <div>
+            <label for="claim-syncer-identifier">Nom ou identifiant du Syncer</label>
+            <input
+              id="claim-syncer-identifier"
+              name="claimSyncerIdentifier"
+              type="text"
+              required
+              autocomplete="off"
+            />
+          </div>
+
+          <div>
+            <label for="claim-syncer-password">Mot de passe Host du Syncer</label>
+            <input
+              id="claim-syncer-password"
+              name="claimSyncerPassword"
+              type="password"
+              required
+            />
+          </div>
+
+          <button type="submit">Réclamer</button>
+        </form>
+        <p id="claim-syncer-feedback" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Compte</h2>
+        <button
+          type="button"
+          id="logout-button"
+          disabled
+          title="Disponible une fois l'endpoint de déconnexion Account (ticket 008) déployé."
+        >
+          Se déconnecter
+        </button>
+      </section>
+
+      <p>
+        <a href="index.html">Retour à l'accueil</a>
+      </p>
+    </main>
+    <script src="js/maintenance.js" defer></script>
+    <script src="js/client-area.js" defer></script>
+  </body>
+</html>

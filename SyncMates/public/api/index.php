@@ -47,6 +47,7 @@ $isReactivateRoute = preg_match('#^/api/syncers/([^/]+)/reactivate$#', $normaliz
 $isStripeWebhookRoute = $normalizedPath === '/api/stripe/webhook';
 $isRegisterAccountRoute = $normalizedPath === '/api/accounts';
 $isLoginAccountRoute = $normalizedPath === '/api/accounts/login';
+$isLogoutAccountRoute = $normalizedPath === '/api/accounts/logout';
 $isGetCurrentAccountRoute = $normalizedPath === '/api/accounts/me';
 $isListOwnedSyncersRoute = $normalizedPath === '/api/accounts/me/syncers';
 
@@ -163,6 +164,12 @@ if ($isRegisterAccountRoute && $method === 'POST') {
 // Route: connexion à un Account.
 if ($isLoginAccountRoute && $method === 'POST') {
     handleLoginAccount();
+    exit;
+}
+
+// Route: déconnexion de l'Account courant.
+if ($isLogoutAccountRoute && $method === 'POST') {
+    handleLogoutAccount();
     exit;
 }
 
