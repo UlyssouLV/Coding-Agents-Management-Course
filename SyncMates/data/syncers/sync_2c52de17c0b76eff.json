@@ -1,0 +1,16 @@
+{
+    "id": "sync_2c52de17c0b76eff",
+    "name": "Owned002-1789037355",
+    "passwordHash": "$2y$12$M41z4p1jSV9C0qVQIw8Hoek/XoZXkH4J8kwl0AnXjUpOZsoC/Y9ji",
+    "host": {
+        "name": "Host"
+    },
+    "participants": [],
+    "eventStartDate": null,
+    "eventEndDate": null,
+    "createdAt": "2026-09-10T10:49:16+00:00",
+    "expiresAt": "2026-09-12T10:49:16+00:00",
+    "shareToken": "1735a058ae30b800c769f52f462c5e67a9ac55659ebd8e94",
+    "ownerAccountId": "acct_c1d680ddb5d309cc",
+    "status": "active"
+}

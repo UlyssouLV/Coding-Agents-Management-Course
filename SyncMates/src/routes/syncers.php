@@ -12,8 +12,10 @@ declare(strict_types=1);
  * - traduction des exceptions en réponses HTTP.
  */
 require_once __DIR__ . '/../services/syncersService.php';
+require_once __DIR__ . '/../services/paymentsService.php';
 require_once __DIR__ . '/../storage/sessionStore.php';
 require_once __DIR__ . '/../utils/http.php';
+require_once __DIR__ . '/accounts.php';
 
 const HOST_SESSION_COOKIE_NAME = 'host_session';
 const HOST_SESSION_TTL_SECONDS = 300;
@@ -34,9 +36,13 @@ function handleCreateSyncer(): void
     $name = isset($payload['name']) ? (string) $payload['name'] : '';
     $password = isset($payload['password']) ? (string) $payload['password'] : '';
 
+    // Optionnelle: une Account Session présente attribue l'Ownership à la
+    // création, mais son absence ne doit jamais bloquer la création (ADR-0005).
+    $ownerAccountId = resolveOptionalAccountId();
+
     try {
         // Délègue la création et la persistance au service métier.
-        $createdSyncer = createSyncer($name, $password);
+        $createdSyncer = createSyncer($name, $password, $ownerAccountId);
         jsonResponse(201, [
             'message' => 'Syncer créé.',
             'syncer' => $createdSyncer,
@@ -106,6 +112,143 @@ function handleLoginSyncer(): void
 }
 
 /**
+ * Traite POST /api/syncers/{id}/claim.
+ *
+ * Établit l'Ownership d'un Compte connecté sur un Syncer Free existant, en
+ * vérifiant les identifiants Host propres à ce Syncer (spec: Claim - ADR-0002).
+ * Une Account Session valide seule ne suffit jamais.
+ *
+ * @param string $syncerId Identifiant technique du Syncer visé.
+ */
+function handleClaimSyncer(string $syncerId): void
+{
+    $accountId = requireAccountSession();
+    if ($accountId === null) {
+        return;
+    }
+
+    $payload = parseJsonRequestBody();
+    if (!is_array($payload)) {
+        return;
+    }
+
+    $identifier = isset($payload['identifier']) ? (string) $payload['identifier'] : '';
+    $password = isset($payload['password']) ? (string) $payload['password'] : '';
+
+    try {
+        $syncer = claimSyncer($syncerId, $identifier, $password, $accountId);
+        jsonResponse(200, [
+            'message' => 'Syncer réclamé.',
+            'syncer' => $syncer,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(401, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (LogicException $exception) {
+        jsonResponse(409, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors du claim du Syncer.',
+        ]);
+    }
+}
+
+/**
+ * Traite POST /api/syncers/{id}/extend.
+ *
+ * Initie une Extension payante one-off (Stripe Checkout, ticket 004): crée
+ * un paiement 'pending' et renvoie l'URL de Checkout. N'applique jamais
+ * l'Extension elle-même (expiresAt inchangé) - voir handleStripeWebhook
+ * dans src/routes/payments.php, seul chemin qui applique le paiement
+ * confirmé.
+ *
+ * @param string $syncerId Identifiant technique du Syncer ciblé.
+ */
+function handleInitiateSyncerExtension(string $syncerId): void
+{
+    $accountId = requireOwningAccountSessionForSyncer($syncerId);
+    if ($accountId === null) {
+        return;
+    }
+
+    try {
+        $result = initiateSyncerExtension($syncerId, $accountId);
+        jsonResponse(201, [
+            'message' => 'Extension initiée, en attente de confirmation du paiement.',
+            'syncer' => $result['syncer'],
+            'checkoutUrl' => $result['checkoutUrl'],
+            'checkoutSessionId' => $result['checkoutSessionId'],
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de l\'initiation de l\'Extension.',
+        ]);
+    }
+}
+
+/**
+ * Traite POST /api/syncers/{id}/reactivate.
+ *
+ * Initie une Reactivation payante one-off (Stripe Checkout, ticket 005) sur
+ * un Syncer Archivé, dans la fenêtre de Reactivation. Même séparation
+ * initiation/confirmation que l'Extension (ticket 004): n'applique jamais la
+ * Reactivation elle-même (status/expiresAt inchangés) - voir
+ * handleStripeWebhook dans src/routes/payments.php, seul chemin qui applique
+ * le paiement confirmé. Gatée comme l'Extension (Account Session propriétaire
+ * uniquement), plus la précondition "Archivé et dans la fenêtre" côté service.
+ *
+ * @param string $syncerId Identifiant technique du Syncer ciblé.
+ */
+function handleInitiateSyncerReactivation(string $syncerId): void
+{
+    $accountId = requireOwningAccountSessionForSyncer($syncerId);
+    if ($accountId === null) {
+        return;
+    }
+
+    try {
+        $result = initiateSyncerReactivation($syncerId, $accountId);
+        jsonResponse(201, [
+            'message' => 'Reactivation initiée, en attente de confirmation du paiement.',
+            'syncer' => $result['syncer'],
+            'checkoutUrl' => $result['checkoutUrl'],
+            'checkoutSessionId' => $result['checkoutSessionId'],
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (DomainException $exception) {
+        jsonResponse(404, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (LogicException $exception) {
+        jsonResponse(409, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de l\'initiation de la Reactivation.',
+        ]);
+    }
+}
+
+/**
  * Traite POST /api/syncers/{id}/participants.
  *
  * Ajoute un participant au Syncer ciblé.
@@ -114,7 +257,10 @@ function handleLoginSyncer(): void
  */
 function handleAddParticipant(string $syncerId): void
 {
-    if (!requireHostSessionForSyncer($syncerId)) {
+    if (!requireHostOrOwningAccountSessionForSyncer($syncerId)) {
+        return;
+    }
+    if (!requireSyncerNotArchived($syncerId)) {
         return;
     }
 
@@ -156,7 +302,10 @@ function handleAddParticipant(string $syncerId): void
  */
 function handleDeleteParticipant(string $syncerId, string $participantId): void
 {
-    if (!requireHostSessionForSyncer($syncerId)) {
+    if (!requireHostOrOwningAccountSessionForSyncer($syncerId)) {
+        return;
+    }
+    if (!requireSyncerNotArchived($syncerId)) {
         return;
     }
 
@@ -190,7 +339,10 @@ function handleDeleteParticipant(string $syncerId, string $participantId): void
  */
 function handleConfigureEventPeriod(string $syncerId): void
 {
-    if (!requireHostSessionForSyncer($syncerId)) {
+    if (!requireHostOrOwningAccountSessionForSyncer($syncerId)) {
+        return;
+    }
+    if (!requireSyncerNotArchived($syncerId)) {
         return;
     }
 
@@ -232,7 +384,10 @@ function handleConfigureEventPeriod(string $syncerId): void
  */
 function handleGetSyncerDetails(string $syncerId): void
 {
-    if (!requireHostSessionForSyncer($syncerId)) {
+    if (!requireHostOrOwningAccountSessionForSyncer($syncerId)) {
+        return;
+    }
+    if (!requireSyncerNotArchived($syncerId)) {
         return;
     }
 
@@ -266,6 +421,10 @@ function handleGetSyncerDetails(string $syncerId): void
  */
 function handleGetSyncerParticipants(string $syncerId): void
 {
+    if (!requireSyncerNotArchived($syncerId)) {
+        return;
+    }
+
     try {
         $payload = getSyncerParticipantsPayload($syncerId);
         jsonResponse(200, [
@@ -294,6 +453,10 @@ function handleGetSyncerParticipants(string $syncerId): void
  */
 function handleGetParticipantUnavailabilities(string $syncerId, string $participantId): void
 {
+    if (!requireSyncerNotArchived($syncerId)) {
+        return;
+    }
+
     try {
         $participant = getParticipantUnavailabilities($syncerId, $participantId);
         jsonResponse(200, [
@@ -322,6 +485,10 @@ function handleGetParticipantUnavailabilities(string $syncerId, string $particip
  */
 function handleUpdateParticipantUnavailabilities(string $syncerId, string $participantId): void
 {
+    if (!requireSyncerNotArchived($syncerId)) {
+        return;
+    }
+
     $payload = parseJsonRequestBody();
     if (!is_array($payload)) {
         return;
@@ -361,6 +528,10 @@ function handleUpdateParticipantUnavailabilities(string $syncerId, string $parti
  */
 function handleGetSyncerResults(string $syncerId): void
 {
+    if (!requireSyncerNotArchived($syncerId)) {
+        return;
+    }
+
     try {
         $results = getSyncerResults($syncerId);
         jsonResponse(200, [
@@ -470,6 +641,142 @@ function requireHostSessionForSyncer(string $syncerId): bool
     }
 
     return true;
+}
+
+/**
+ * Vérifie qu'une Host Session scopée à ce Syncer OU une Account Session dont
+ * l'Account possède ce Syncer autorise l'accès (spec: "Once a Syncer is
+ * owned, the Account Session alone is sufficient" - ADR-0002).
+ *
+ * Les deux mécanismes restent des vérifications indépendantes (either/or):
+ * une Host Session pour un autre Syncer, ou une Account Session pour un
+ * Account non-propriétaire, sont chacune rejetées comme si absentes.
+ *
+ * @param string $syncerId Identifiant du Syncer ciblé.
+ *
+ * @return bool true si autorisé, false sinon (réponse HTTP déjà émise).
+ */
+function requireHostOrOwningAccountSessionForSyncer(string $syncerId): bool
+{
+    // Vérification silencieuse de la Host Session (pas d'effet de bord HTTP
+    // ici: le rejet final réutilise requireHostSessionForSyncer plus bas
+    // pour garantir la même réponse qu'avant ce ticket dans le cas anonyme).
+    $hostSessionId = isset($_COOKIE[HOST_SESSION_COOKIE_NAME]) ? (string) $_COOKIE[HOST_SESSION_COOKIE_NAME] : '';
+    if ($hostSessionId !== '') {
+        $hostSession = getHostSessionById($hostSessionId);
+        if (is_array($hostSession)) {
+            $sessionSyncerId = isset($hostSession['syncerId']) ? (string) $hostSession['syncerId'] : '';
+            if ($sessionSyncerId === $syncerId) {
+                return true;
+            }
+        }
+    }
+
+    // Vérification silencieuse de l'Account Session + Ownership.
+    $accountId = resolveOptionalAccountId();
+    if ($accountId !== null) {
+        $syncer = getSyncerById($syncerId);
+        if (is_array($syncer)) {
+            $ownerAccountId = isset($syncer['ownerAccountId']) ? $syncer['ownerAccountId'] : null;
+            if ($ownerAccountId !== null && $ownerAccountId === $accountId) {
+                return true;
+            }
+        }
+    }
+
+    // Ni l'une ni l'autre: réutilise la vérification Host Session existante
+    // pour émettre exactement la même réponse qu'avant ce ticket.
+    return requireHostSessionForSyncer($syncerId);
+}
+
+/**
+ * Vérifie qu'un Syncer n'est pas Archivé avant de servir ses données ou
+ * d'accepter une action sur son contenu (ticket 005). Pas de mode dégradé
+ * lecture seule: Host, Account propriétaire et Participant sont tous
+ * bloqués de la même façon quand `status: archived` (spec: "Explicitly out
+ * of scope" - Read-only Participant access).
+ *
+ * Appelée après les vérifications d'authentification/Ownership existantes
+ * pour les routes Host-gated, et en tout premier pour les routes
+ * Participant (non authentifiées).
+ *
+ * @param string $syncerId Identifiant du Syncer ciblé.
+ *
+ * @return bool true si l'accès peut continuer, false si la requête a déjà
+ *              reçu une réponse HTTP (404 introuvable, ou 403 archivé).
+ */
+function requireSyncerNotArchived(string $syncerId): bool
+{
+    $syncer = getSyncerById($syncerId);
+    if (!is_array($syncer)) {
+        jsonResponse(404, [
+            'error' => 'Syncer introuvable.',
+        ]);
+        return false;
+    }
+
+    $status = isset($syncer['status']) ? (string) $syncer['status'] : 'active';
+    if ($status === 'archived') {
+        jsonResponse(403, [
+            'error' => 'Ce Syncer est archivé en attente de paiement (Reactivation).',
+        ]);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Vérifie qu'une Account Session valide possède ce Syncer, pour les actions
+ * payantes (Extension - ticket 004) qui doivent être déclenchées par
+ * l'Account propriétaire lui-même. Contrairement à
+ * requireHostOrOwningAccountSessionForSyncer, une Host Session seule ne
+ * suffit jamais ici: payer une Extension est une action d'Account, pas de
+ * gestion courante du Syncer (spec: "the Account must explicitly trigger and
+ * pay for every Extension").
+ *
+ * Réutilise la même comparaison ownerAccountId === accountId introduite pour
+ * l'Ownership au ticket 003, simplement sans le fallback Host Session.
+ *
+ * @param string $syncerId Identifiant du Syncer ciblé.
+ *
+ * @return string|null Identifiant de l'Account autorisé, ou null si la
+ *                      requête a déjà reçu une réponse (401/403/404/409).
+ */
+function requireOwningAccountSessionForSyncer(string $syncerId): ?string
+{
+    $accountId = requireAccountSession();
+    if ($accountId === null) {
+        return null;
+    }
+
+    $syncer = getSyncerById($syncerId);
+    if (!is_array($syncer)) {
+        jsonResponse(404, [
+            'error' => 'Syncer introuvable.',
+        ]);
+        return null;
+    }
+
+    // Précondition spec ("A Paid Syncer must be owned by an Account"):
+    // rejetée avant toute interaction Stripe, avec un message distinct du
+    // cas "possédé par un autre Account" ci-dessous.
+    $ownerAccountId = isset($syncer['ownerAccountId']) ? $syncer['ownerAccountId'] : null;
+    if ($ownerAccountId === null) {
+        jsonResponse(409, [
+            'error' => 'Ce Syncer n\'est pas possédé par un Account: il doit d\'abord être Claim avant de pouvoir être étendu.',
+        ]);
+        return null;
+    }
+
+    if ($ownerAccountId !== $accountId) {
+        jsonResponse(403, [
+            'error' => 'Ce Syncer appartient à un autre Account.',
+        ]);
+        return null;
+    }
+
+    return $accountId;
 }
 
 /**

@@ -1,0 +1,21 @@
+--- initial/005-archival-lifecycle-and-reactivation.md	2026-09-10 12:59:15
++++ final/005-archival-lifecycle-and-reactivation.md	2026-09-10 12:59:15
+@@ -39,7 +39,8 @@
+   passed). This must now branch on whether the Syncer is Free (`ownerAccountId: null`, or more precisely:
+   never paid) or Paid:
+   - Free Syncer past `expiresAt`: delete outright — unchanged, existing behavior.
+-  - Paid Syncer (has a payment history from Ticket 004) past `expiresAt` and not already `archived`: set
++  - Paid Syncer (has a **confirmed** payment from Ticket 004 — a pending Checkout does not count)
++    past `expiresAt` and not already `archived`: set
+     `status: archived` and record an `archivedAt` timestamp; do not delete the file.
+   - An already-`archived` Syncer past the Reactivation Window is *not* deleted by this ticket either —
+     automated Retention-Period deletion is explicitly out of scope (spec, "Explicitly out of scope";
+@@ -59,7 +60,7 @@
+   the window length a named, configurable constant, matching how the 48-hour Free window and the
+   Extension duration are already constants). Reuse Ticket 004's one-off Stripe Checkout mechanism for the
+   Reactivation charge — same "no subscription" constraint applies (ADR-0003 covers both Extension and
+-  Reactivation).
++  Reactivation). Same amount as Extension: **1 EUR** (100 cents, `eur`).
+ - On confirmed Reactivation payment: set `status: active`, clear/update `archivedAt`, and set a new
+   `expiresAt` (now + the standard Extension duration, since the Syncer has no "remaining" paid time left
+   to be cumulative with — it was archived, not still counting down).

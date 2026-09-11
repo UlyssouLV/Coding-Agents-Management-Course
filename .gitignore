@@ -1,1 +1,4 @@
 .DS_Store
+SyncMates/config/stripe.local.php
+.env
+.env.local

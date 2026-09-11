@@ -1,0 +1,48 @@
+{
+    "id": "sync_79207005ed69d137",
+    "name": "Paid004",
+    "passwordHash": "$2y$12$N5PWzt7q14A.jU2QmcMT2uBkD9KDJZSIeWZPT5py2vsFNolOdENqW",
+    "host": {
+        "name": "Host"
+    },
+    "participants": [],
+    "eventStartDate": null,
+    "eventEndDate": null,
+    "createdAt": "2026-09-10T10:19:52+00:00",
+    "expiresAt": "2026-11-11T10:19:52+00:00",
+    "shareToken": "76ae16774c27152d67576466aee8497b0565c42face17a57",
+    "ownerAccountId": "acct_98fc6a10916b13ad",
+    "status": "active",
+    "payments": [
+        {
+            "id": "pay_00c8efae6ccd9b04",
+            "type": "extension",
+            "stripeCheckoutSessionId": "cs_test_stub_9e88b108e1b5d08c629e347c",
+            "amountCents": 500,
+            "currency": "usd",
+            "status": "confirmed",
+            "createdAt": "2026-09-10T10:19:53+00:00",
+            "confirmedAt": "2026-09-10T10:19:53+00:00"
+        },
+        {
+            "id": "pay_e1e51370cfffc417",
+            "type": "extension",
+            "stripeCheckoutSessionId": "cs_test_stub_01350a97b771df21115b5c03",
+            "amountCents": 500,
+            "currency": "usd",
+            "status": "confirmed",
+            "createdAt": "2026-09-10T10:19:53+00:00",
+            "confirmedAt": "2026-09-10T10:19:53+00:00"
+        },
+        {
+            "id": "pay_eb27acad58b2c1f6",
+            "type": "extension",
+            "stripeCheckoutSessionId": "cs_test_stub_c52f0871072e811bdac10e00",
+            "amountCents": 500,
+            "currency": "usd",
+            "status": "pending",
+            "createdAt": "2026-09-10T10:19:53+00:00",
+            "confirmedAt": null
+        }
+    ]
+}

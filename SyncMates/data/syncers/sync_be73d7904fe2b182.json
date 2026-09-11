@@ -1,0 +1,15 @@
+{
+    "id": "sync_be73d7904fe2b182",
+    "name": "Anon002",
+    "passwordHash": "$2y$12$L.fFJS/dtwiQ7NoL0gaGHOcdg3L5jKT13MeZQR651HSv.Ek8wpjui",
+    "host": {
+        "name": "Host"
+    },
+    "participants": [],
+    "eventStartDate": null,
+    "eventEndDate": null,
+    "createdAt": "2026-09-10T10:04:55+00:00",
+    "expiresAt": "2026-09-12T10:04:55+00:00",
+    "shareToken": "3b1807e121651e33b9ec47f7525203a522d79f2c8fc42070",
+    "ownerAccountId": null
+}

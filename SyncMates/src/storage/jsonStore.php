@@ -130,6 +130,42 @@ function findSyncerByNameAndPassword(string $name, string $password): ?array
 }
 
 /**
+ * Recherche tous les Syncers appartenant à un Account donné.
+ *
+ * Même approche que findSyncerByNameAndPassword (ADR-0001): scan glob() de
+ * data/syncers/*.json plutôt qu'un index ou une base de données.
+ *
+ * @param string $accountId Identifiant de l'Account propriétaire.
+ *
+ * @return array Liste des Syncers (bruts, avec passwordHash) dont ownerAccountId correspond.
+ */
+function findSyncersOwnedByAccountId(string $accountId): array
+{
+    ensureSyncersDataDirectoryExists();
+
+    $pattern = syncersDataDirectory() . '/*.json';
+    $paths = glob($pattern);
+    if (!is_array($paths)) {
+        return [];
+    }
+
+    $ownedSyncers = [];
+    foreach ($paths as $path) {
+        $syncer = readSyncerFromPath($path);
+        if (!is_array($syncer)) {
+            continue;
+        }
+
+        $ownerAccountId = isset($syncer['ownerAccountId']) ? $syncer['ownerAccountId'] : null;
+        if ($ownerAccountId === $accountId) {
+            $ownedSyncers[] = $syncer;
+        }
+    }
+
+    return $ownedSyncers;
+}
+
+/**
  * Lit un fichier Syncer JSON et retourne son contenu décodé.
  *
  * @param string $path Chemin absolu vers un fichier Syncer.

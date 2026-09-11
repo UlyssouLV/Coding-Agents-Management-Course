@@ -1,0 +1,16 @@
+{
+    "id": "sync_b79272577f964386",
+    "name": "ClaimMe002-1789037355",
+    "passwordHash": "$2y$12$h.jfVCueQ4wtLkjj4VyXrOMbJ2XLx39k.rmXdHxM1YNpkjYql3azC",
+    "host": {
+        "name": "Host"
+    },
+    "participants": [],
+    "eventStartDate": null,
+    "eventEndDate": null,
+    "createdAt": "2026-09-10T10:49:16+00:00",
+    "expiresAt": "2026-09-12T10:49:16+00:00",
+    "shareToken": "b8854906b2e0f67d9f3ce6d14ebad2065484aa83f20bfb83",
+    "ownerAccountId": "acct_c1d680ddb5d309cc",
+    "status": "active"
+}

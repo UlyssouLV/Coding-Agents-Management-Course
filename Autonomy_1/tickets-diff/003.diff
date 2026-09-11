@@ -1,0 +1,15 @@
+--- initial/003-account-session-manages-owned-syncers.md	2026-09-10 12:59:15
++++ final/003-account-session-manages-owned-syncers.md	2026-09-10 12:59:15
+@@ -61,9 +61,9 @@
+ 
+ - With an Account Session owning a Syncer and no Host Session cookie at all: adding a participant,
+   deleting a participant, configuring the event period, and getting Syncer details all succeed.
+-- The same requests with an Account Session that does *not* own the target Syncer are rejected (403, or
+-  401 matching the existing convention for an absent/invalid session — pick one and apply it consistently
+-  with the existing `requireHostSessionForSyncer` responses).
++- The same requests with an Account Session that does *not* own the target Syncer are rejected with
++  **401**, matching `requireHostSessionForSyncer` (choice recorded after implement: the ticket allowed 401
++  or 403).
+ - The same requests with neither a Host Session nor an Account Session are rejected exactly as before this
+   ticket (no regression for the fully anonymous case).
+ - `GET /api/accounts/me/syncers` returns exactly the Syncers owned by the calling Account, and none owned

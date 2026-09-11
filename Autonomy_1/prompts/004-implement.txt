@@ -1,0 +1,9 @@
+Implement this ticket and only this ticket. Do not implement ticket 005. Do not re-do tickets 001–003 unless a bug blocks this ticket. Do not commit. Do not push.
+
+Read docs/agents/tickets/004-paid-syncer-extension-via-stripe.md and do exactly what it says. Follow its "Read first" links if you need them. Do not add features that are out of scope.
+
+If something you need is not in the ticket (or its Read-first docs), do not invent it in the prompt — stop, list it under a heading TICKET_GAP, and if you must proceed, make the smallest choice and record it under TICKET_GAP.
+
+Stripe: if no live Stripe keys are present, use the smallest test/stub that still satisfies the ticket's acceptance criteria (owned-only, cumulative expiresAt, no apply until payment confirmed). Record that choice under TICKET_GAP.
+
+When finished, summarize files changed and how to curl-verify the acceptance criteria.

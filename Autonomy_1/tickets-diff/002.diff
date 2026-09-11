@@ -1,0 +1,12 @@
+--- initial/002-ownership-at-creation-and-claim.md	2026-09-10 12:59:15
++++ final/002-ownership-at-creation-and-claim.md	2026-09-10 12:59:15
+@@ -43,6 +43,9 @@
+     already-owned Syncer (the spec describes Ownership as a single relationship between one Account and
+     one Syncer; nothing in the spec describes transferring or sharing Ownership).
+ - On success, set `ownerAccountId` on the Syncer and persist via `saveSyncer`.
++- Claim HTTP status codes (not originally in this ticket; filled after a fresh implement session asked):
++  401 when there is no Account Session; 401 when Host credentials are wrong (same convention as
++  `loginSyncer`); 409 when the Syncer is already owned (same convention as duplicate-create conflicts).
+ 
+ ## Out of scope
+ 

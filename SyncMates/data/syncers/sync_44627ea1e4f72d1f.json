@@ -1,0 +1,16 @@
+{
+    "id": "sync_44627ea1e4f72d1f",
+    "name": "Free004-1789037359",
+    "passwordHash": "$2y$12$EXH1PqBDRtOo7uJRjMx9qOfc7N7IK08JoL5y5h7BGEOwNWXLf24RO",
+    "host": {
+        "name": "Host"
+    },
+    "participants": [],
+    "eventStartDate": null,
+    "eventEndDate": null,
+    "createdAt": "2026-09-10T10:49:20+00:00",
+    "expiresAt": "2026-09-12T10:49:20+00:00",
+    "shareToken": "33edd7e428dafe09c6d97260e942cc122be6efb334212273",
+    "ownerAccountId": null,
+    "status": "active"
+}

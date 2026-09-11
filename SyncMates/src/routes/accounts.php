@@ -13,6 +13,7 @@ declare(strict_types=1);
  * flux Host Session de src/routes/syncers.php.
  */
 require_once __DIR__ . '/../services/accountsService.php';
+require_once __DIR__ . '/../services/syncersService.php';
 require_once __DIR__ . '/../storage/sessionStore.php';
 require_once __DIR__ . '/../utils/http.php';
 
@@ -144,6 +145,35 @@ function handleGetCurrentAccount(): void
 }
 
 /**
+ * Traite GET /api/accounts/me/syncers.
+ *
+ * Renvoie tous les Syncers dont ownerAccountId correspond à l'Account
+ * courant (spec: Ownership - rend l'Ownership visible côté client).
+ */
+function handleListOwnedSyncers(): void
+{
+    $accountId = requireAccountSession();
+    if ($accountId === null) {
+        return;
+    }
+
+    try {
+        $syncers = getSyncersOwnedByAccount($accountId);
+        jsonResponse(200, [
+            'syncers' => $syncers,
+        ]);
+    } catch (InvalidArgumentException $exception) {
+        jsonResponse(400, [
+            'error' => $exception->getMessage(),
+        ]);
+    } catch (Throwable $exception) {
+        jsonResponse(500, [
+            'error' => 'Erreur serveur lors de la récupération des Syncers.',
+        ]);
+    }
+}
+
+/**
  * Vérifie qu'une Account Session valide accompagne la requête.
  *
  * @return string|null Identifiant de l'Account authentifié, ou null si la
@@ -178,6 +208,31 @@ function requireAccountSession(): ?string
     }
 
     return $accountId;
+}
+
+/**
+ * Résout l'Account id de la session courante, sans effet de bord HTTP.
+ *
+ * Contrairement à requireAccountSession(), n'émet aucune réponse ni cookie: sert
+ * aux endpoits où l'Account Session est optionnelle, comme la création de
+ * Syncer (ADR-0005: la création anonyme doit rester possible telle quelle).
+ *
+ * @return string|null Identifiant de l'Account authentifié, ou null si absent/invalide.
+ */
+function resolveOptionalAccountId(): ?string
+{
+    $sessionId = isset($_COOKIE[ACCOUNT_SESSION_COOKIE_NAME]) ? (string) $_COOKIE[ACCOUNT_SESSION_COOKIE_NAME] : '';
+    if ($sessionId === '') {
+        return null;
+    }
+
+    $session = getAccountSessionById($sessionId);
+    if (!is_array($session)) {
+        return null;
+    }
+
+    $accountId = isset($session['accountId']) ? (string) $session['accountId'] : '';
+    return $accountId !== '' ? $accountId : null;
 }
 
 /**

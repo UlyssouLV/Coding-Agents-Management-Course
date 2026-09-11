@@ -57,3 +57,11 @@ function generateAccountSessionId(): string
     return 'as_' . bin2hex(random_bytes(24));
 }
 
+/**
+ * Génère un identifiant unique de paiement (Extension/Reactivation).
+ */
+function generatePaymentId(): string
+{
+    return 'pay_' . bin2hex(random_bytes(8));
+}
+

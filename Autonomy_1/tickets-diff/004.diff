@@ -1,0 +1,18 @@
+--- initial/004-paid-syncer-extension-via-stripe.md	2026-09-10 12:59:15
++++ final/004-paid-syncer-extension-via-stripe.md	2026-09-10 12:59:15
+@@ -39,6 +39,15 @@
+   `expiresInHoursIso8601` / `expiresInSecondsIso8601` in `src/utils/date.php`, but added on top of the
+   existing `expiresAt` rather than computed fresh from `now`. This is what makes it cumulative rather than
+   a reset (spec's explicit requirement).
++- **Configured duration:** 720 hours (30 days), `SYNCER_EXTENSION_HOURS`. **Price: 100 cents EUR (1 €)**,
++  as already stated in the product README (`Paiement 1 EUR pour prolonger 1 mois`). Do not use USD.
++- **Stripe keys:** live in `config/stripe.local.php` (gitignored; copy `config/stripe.example.php`).
++  Changeable without touching PHP. `secret_key` creates Checkout Sessions. `publishable_key` is reserved
++  for a future Host UI (this ticket is API-only). `webhook_secret` is optional: Stripe cannot reach
++  `localhost`, so lab confirmation stays `POST /api/stripe/webhook` with `checkout.session.completed`
++  using the `checkoutSessionId` returned at initiate. When `secret_key` is set, initiate **must** call
++  Stripe test API (session id is a real `cs_test_…`, not `cs_test_stub_…`). When it is empty, stub remains.
++- Unowned Syncer → **409** before any Stripe call; other Account → **403**; no session → **401**.
+ - **Status**: introduce a `status` field on the Syncer (`active` by default) if it does not already exist
+   after Ticket 002/003 — Extension does not need to change it (it only applies to an already-Active
+   Syncer), but Ticket 005 will need this field to represent `archived`, and this ticket is the natural

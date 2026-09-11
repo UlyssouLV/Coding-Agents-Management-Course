@@ -18,15 +18,18 @@ require_once __DIR__ . '/../utils/id.php';
 /**
  * Crée un Syncer et l'enregistre dans le stockage JSON.
  *
- * @param string $name     Nom utilisateur du Syncer.
- * @param string $password Mot de passe brut saisi par le host.
+ * @param string      $name           Nom utilisateur du Syncer.
+ * @param string      $password       Mot de passe brut saisi par le host.
+ * @param string|null $ownerAccountId Identifiant de l'Account propriétaire si une
+ *                                    Account Session est présente à la création, sinon null
+ *                                    (Syncer anonyme, comportement inchangé - ADR-0005).
  *
  * @return array Syncer créé, sans passwordHash.
  *
  * @throws InvalidArgumentException Si les entrées sont invalides.
  * @throws RuntimeException         Si une erreur de génération/stockage survient.
  */
-function createSyncer(string $name, string $password): array
+function createSyncer(string $name, string $password, ?string $ownerAccountId = null): array
 {
     // Nettoie le nom pour éviter les espaces seuls.
     $trimmedName = trim($name);
@@ -70,6 +73,11 @@ function createSyncer(string $name, string $password): array
         'createdAt' => nowIso8601(),
         'expiresAt' => expiresInHoursIso8601(48),
         'shareToken' => generateShareToken(),
+        'ownerAccountId' => $ownerAccountId,
+        // Introduit par le ticket 004: 'active' par défaut. Ticket 005 y
+        // ajoutera 'archived' pour représenter un Paid Syncer dont la
+        // période payée a expiré sans Extension.
+        'status' => 'active',
     ];
 
     // Persiste le Syncer dans data/syncers/{id}.json.
@@ -109,6 +117,91 @@ function loginSyncer(string $identifier, string $password): array
 
     unset($syncer['passwordHash']);
     return $syncer;
+}
+
+/**
+ * Établit l'Ownership d'un Compte sur un Syncer Free existant (Claim), en
+ * validant les identifiants Host propres à ce Syncer (spec: Claim - ADR-0002).
+ *
+ * @param string $syncerId       Identifiant technique du Syncer à réclamer.
+ * @param string $identifier     Identifiant Host saisi (ID technique ou nom du Syncer).
+ * @param string $password       Mot de passe Host brut saisi.
+ * @param string $ownerAccountId Identifiant de l'Account qui réclame le Syncer.
+ *
+ * @return array Syncer mis à jour, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si les entrées sont invalides.
+ * @throws DomainException          Si les identifiants sont invalides, si le Syncer visé ne
+ *                                   correspond pas à celui authentifié, ou s'il est déjà possédé.
+ */
+function claimSyncer(string $syncerId, string $identifier, string $password, string $ownerAccountId): array
+{
+    $trimmedSyncerId = trim($syncerId);
+    $trimmedIdentifier = trim($identifier);
+
+    if ($trimmedSyncerId === '') {
+        throw new InvalidArgumentException('L\'identifiant du Syncer est requis.');
+    }
+    if ($trimmedIdentifier === '') {
+        throw new InvalidArgumentException('Le nom ou identifiant du Syncer est requis.');
+    }
+    if ($password === '') {
+        throw new InvalidArgumentException('Le mot de passe est requis.');
+    }
+    if (trim($ownerAccountId) === '') {
+        throw new InvalidArgumentException('L\'identifiant de l\'Account est requis.');
+    }
+
+    // Vérifie les identifiants Host exactement comme loginSyncer: connaître
+    // l'URL/ID du Syncer seul ne doit jamais suffire (ADR-0002).
+    $authenticatedSyncer = findSyncerForLogin($trimmedIdentifier, $password);
+    if (!is_array($authenticatedSyncer)) {
+        throw new DomainException('Identifiants de connexion invalides.');
+    }
+
+    $authenticatedSyncerId = isset($authenticatedSyncer['id']) ? (string) $authenticatedSyncer['id'] : '';
+    if ($authenticatedSyncerId !== $trimmedSyncerId) {
+        throw new DomainException('Identifiants de connexion invalides.');
+    }
+
+    // LogicException (et non DomainException) pour que la route distingue ce
+    // conflit (409) d'un échec d'identifiants (401), tout en réutilisant la
+    // même hiérarchie SPL InvalidArgumentException/DomainException/LogicException
+    // déjà utilisée ailleurs dans ce fichier.
+    $existingOwnerAccountId = isset($authenticatedSyncer['ownerAccountId']) ? $authenticatedSyncer['ownerAccountId'] : null;
+    if ($existingOwnerAccountId !== null && $existingOwnerAccountId !== '') {
+        throw new LogicException('Ce Syncer appartient déjà à un Account.');
+    }
+
+    $authenticatedSyncer['ownerAccountId'] = $ownerAccountId;
+    saveSyncer($authenticatedSyncer);
+
+    unset($authenticatedSyncer['passwordHash']);
+    return $authenticatedSyncer;
+}
+
+/**
+ * Retourne tous les Syncers possédés par un Account.
+ *
+ * @param string $ownerAccountId Identifiant de l'Account propriétaire.
+ *
+ * @return array Liste des Syncers possédés, sans passwordHash.
+ *
+ * @throws InvalidArgumentException Si l'identifiant de l'Account est vide.
+ */
+function getSyncersOwnedByAccount(string $ownerAccountId): array
+{
+    $trimmedOwnerAccountId = trim($ownerAccountId);
+    if ($trimmedOwnerAccountId === '') {
+        throw new InvalidArgumentException('L\'identifiant de l\'Account est requis.');
+    }
+
+    $syncers = findSyncersOwnedByAccountId($trimmedOwnerAccountId);
+
+    return array_map(static function (array $syncer): array {
+        unset($syncer['passwordHash']);
+        return $syncer;
+    }, $syncers);
 }
 
 /**
